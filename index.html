@@ -1,0 +1,107 @@
+<!DOCTYPE html><html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Tab Creator – Riff & Variante avec Import/Export</title>
+<style>
+  body { margin:0; font-family:Arial,sans-serif; background:black; color:#0f0; display:flex; height:100vh; }
+  .menu { width:260px; background:#111; padding:15px; overflow-y:auto; }
+  .menu h2 { margin:10px 0; }
+  .menu button { width:100%; padding:8px; margin:3px 0; background:#222; color:#0f0; border:none; cursor:pointer; }
+  .menu button:hover { background:#0f0; color:black; }
+  .screen { flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+  .tab { font-family:monospace; font-size:24px; white-space:pre; text-align:left; }
+  .section { margin-bottom:20px; }
+  .help { font-size:14px; color:#aaa; margin-top:10px; }
+  .mode-button { background:#444; }
+</style>
+</head>
+<body><div class="menu">
+  <h2>🎸 Cordes</h2>
+  <button onclick="selectString('E')">Mi grave (E)</button>
+  <button onclick="selectString('A')">La (A)</button>
+  <button onclick="selectString('D')">Ré (D)</button>
+  <button onclick="selectString('G')">Sol (G)</button>
+  <button onclick="selectString('B')">Si (B)</button>
+  <button onclick="selectString('e')">Mi aigu (e)</button>  <h2>🎯 Cases (0 → 21)</h2>
+  <div style="max-height:250px;overflow:auto;">
+    <script>
+      for(let i=0;i<=21;i++){
+        document.write(`<button onclick="addNote(${i})">${i}</button>`);
+      }
+    </script>
+  </div>  <h2>📝 Mode</h2>
+  <button class="mode-button" onclick="setMode('main')">Écrire sur Riff</button>
+  <button class="mode-button" onclick="setMode('variant')">Écrire sur Variante</button>  <h2>💾 Sauvegarde</h2>
+  <button onclick="exportTab()">Exporter</button>
+  <input type="file" id="importFile" style="display:none" onchange="importTab(event)">
+  <button onclick="document.getElementById('importFile').click()">Importer</button><button onclick="clearTabs()">🗑 Reset</button>
+
+  <h2>❓ Aide</h2>
+  <button onclick="alert('E = Mi grave\nA = La\nD = Ré\nG = Sol\nB = Si\ne = Mi aigu')">Voir</button>
+</div><div class="screen">
+  <div class="section">
+    <div class="tab" id="mainTabDisplay"></div>
+  </div>
+  <div class="section">
+    <div class="tab" id="variantTabDisplay"></div>
+  </div>
+  <div class="help">Choisissez le mode avec les boutons puis appuyez sur les cases pour écrire.</div>
+</div><script>
+let currentString = 'E';
+let mode = 'main'; // 'main' ou 'variant'
+let mainTab = { e:'', B:'', G:'', D:'', A:'', E:'' };
+let variantTab = { e:'', B:'', G:'', D:'', A:'', E:'' };
+
+function selectString(s){ currentString = s; }
+function setMode(m){ mode = m; }
+
+function addNote(n){
+  if(mode==='main'){
+    mainTab[currentString] += n + '-';
+  } else {
+    variantTab[currentString] += n + '-';
+  }
+  render();
+}
+
+function render(){
+  let outputMain='', outputVariant='';
+  ['e','B','G','D','A','E'].forEach(s => { outputMain += s+'|'+mainTab[s]+'\n'; });
+  ['e','B','G','D','A','E'].forEach(s => { outputVariant += s+'|'+variantTab[s]+'\n'; });
+  document.getElementById('mainTabDisplay').innerText = '🎼 Riff principal:\n'+outputMain;
+  document.getElementById('variantTabDisplay').innerText = '🔁 Variante:\n'+outputVariant;
+}
+
+function clearTabs(){ mainTab={e:'',B:'',G:'',D:'',A:'',E:''}; variantTab={e:'',B:'',G:'',D:'',A:'',E:''}; render(); }
+
+function exportTab(){
+  const data = JSON.stringify({mainTab, variantTab});
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'tab.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importTab(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const obj = JSON.parse(e.target.result);
+      mainTab = obj.mainTab || mainTab;
+      variantTab = obj.variantTab || variantTab;
+      render();
+    } catch(err){
+      alert('Fichier invalide');
+    }
+  };
+  reader.readAsText(file);
+}
+
+render();
+</script></body>
+</html>
